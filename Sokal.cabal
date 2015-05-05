@@ -16,8 +16,8 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable sokal
-  -- main-is:          Main.hs   
-  -- other-modules:    Suck, Spew, MakeModel   
+  main-is:          Main.hs   
+  other-modules:    Suck, Spew, MakeModel   
   -- other-extensions:    
   build-depends:       base >=4.7 && <4.8, Cabal, HTTP, tagsoup
   -- hs-source-dirs:      
