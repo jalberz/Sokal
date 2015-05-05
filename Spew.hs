@@ -8,15 +8,22 @@ Instructors: Stuart Kurtz & Jakub Tucholski
 
 module Spew (executeSpew) where
 
+--Imports
 import Distribution.Simple
 import Data.Array
 import System.Random
 import Control.Monad.State.Lazy
 
+--Types
 type FastModel = Array Int (String,[(Int,Int)])
-
 type RandState = State StdGen
 
+
+{-
+function to read sokal.model, run randomization
+models, and then spit out the resulting Sokal-mixed
+string.
+-}
 executeSpew :: Int -> IO ()
 executeSpew size = do
   model <- readFile "sokal.model"
@@ -25,11 +32,13 @@ executeSpew size = do
   gen <- getStdGen
   let markov = evalState (runSokalModel readModel size len) gen
   putStr $ linefill 72 markov
+
 {-
 My version on the random selection builds on the code from
-CMSC 161 Lecture 18
+CMSC 161 Lecture 18. An initial index is randomly generated
+from the array and used to initiate an iterator that selects
+successor words to add to the list of words.
 -}
-
 runSokalModel :: [(String, [(Int,Int)])] -> Int -> Int -> RandState [String]
 runSokalModel proc size len = do
   index <- state $ randomR (bounds model)
@@ -45,10 +54,13 @@ runSokalModel proc size len = do
           return $ ((fst place): remainder)
 
 
-
 {-
-My version on the random selection builds on the code from
-CMSC 161 Lecture 18
+The weighted random select function. My version on the random selection 
+builds on the select function from CMSC 161 Lecture 18. This function
+first checks if the selection should continue or not depending on how
+whether or not the requested input size has been reached or not (and
+the end of a sentence has been reached). If not, then a new random index
+is generated and passed to selectWithWeight
 -}
 sokalSelect :: (String, [(Int,Int)]) -> Int -> Int -> RandState (Maybe Int)
 sokalSelect place tally size = 
@@ -61,11 +73,17 @@ sokalSelect place tally size =
       return $ selectWithWeight i successors 
     else return $ Nothing
 
-
+{-
+A helper for the select function. This function goes through the
+successors of a function (if they exist), if not empty, the randomly
+generated int random is compared with the weight of a particular successor.
+This random becomes more and more favorable to selection of a particular
+successor as it walks down the list
+-}
 selectWithWeight :: Int -> [(Int, Int)] -> Maybe Int
 selectWithWeight _ [] = Nothing
-selectWithWeight i ((weight, ident):ls) 
-  | (i - weight) > 0 = selectWithWeight (i - weight) ls
+selectWithWeight random ((weight, ident):ls) 
+  | (random - weight) > 0 = selectWithWeight (random - weight) ls
   | otherwise = Just ident
 
 
@@ -79,45 +97,3 @@ linefill n (x:xs) = iter x xs where
     | length x + length y + 1 > n = x ++ "\n" ++ linefill n (y:ys)
     | otherwise = iter (x ++ " " ++ y) ys
 
-{-}
--- |This is heavily inspired (read: copied verbatim then modified) from Lecture 18 from 16100.
-markovSelect :: [(Int,Int)] -> RandState Int
-markovSelect successors = fmap (weightedSelect successors) . state . randomR $ (0,sum $ (map fst) successors) where
-  weightedSelect ((weight,state):remainders) ix
-    | ix - weight <= 0   = state
-    | otherwise = weightedSelect remainders (ix-weight)
-
-
-select :: [a] -> RandState a
-    select as = do
-        ix <- state $ randomR (0,length as - 1)
-        return $ as !! ix
-
--- |So is this.
-runModel :: [String] -> RandState [String]
-runModel inputModel = do
-  start <- state . randomR $ bounds fastModel
-  iter start where
-    fastModel = listArray (0,length inputModel - 1) (map read inputModel)
-    iter ix = do
-      let (ixString,succs) = fastModel ! ix
-      succ <- markovSelect succs
-      case succ of
-        -1 -> do
-          rest <- (state . randomR) (bounds fastModel) >>= (\s -> iter s)
-          return $ ixString:rest
-        n  -> do
-          rest <- iter n
-          return $ ixString:rest
-
-
-   runModel :: Model -> RandState [String]
-    runModel (start,wordmap) = iter start where
-        iter word = do
-            let successors = wordmap ! word
-            succ <- select successors
-            case succ of
-                Nothing -> return [word]
-                Just w -> do
-                    ws <- iter w
-                    return (word:ws)-}
