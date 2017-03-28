@@ -1,4 +1,4 @@
-# Sokal: Postmoder Text Generator
+# Sokal: Postmodern Text Generator
 Lab 1 for CMSC 22311
 
 A fill-text generator for Postmodern Text from the magazine Postmodern Culture.
