@@ -1,6 +1,7 @@
 module Suck exposing (..)
 
 import HTTP
+import Debug
 import Json.Decode
 import List
 import Html exposing (..)
@@ -24,23 +25,64 @@ type Msg = Suck (Result Http.Error String) | Spew
 update : Msg -> Model -> (Model, Cmd.Msg)
 update msg model =
   case msg of
-    Suck -> (model, getURLs "urls.txt")
+    Click -> (model, getURLs)
+
+    Suck (Ok text) -> (model, harvest text)
+
+    Suck (Err _) -> Debug.crash "Error: HTTP get request" 
     Spew -> (model, msg)
 
-getURLs : String -> Cmd Msg
-getURLs file =
+getURLs : Cmd Msg
+getURLs =
   let
-    urls =
+    src =
       "http://cmsc-22311.cs.uchicago.edu/2015/Labs/Lab-01/urls.txt"
 
-    request =
-      Http.get url decodeUrl
+    text =
+      Http.getString src
+
   in
-    Http.send Suck request
+    Http.send Suck text
 
 decodeUrl : Decode.Decoder String
 decodeUrl =
   Decode.at ["data", "url"] Decode.string
+
+harvest : String -> String
+harvest text =
+    let
+        urls = lines text
+        requests = map Http.getString urls
+    in
+        map Http.send requests
+
+
+
+{-
+//change haskell function to one that converts html to text
+harvest ::  String -> String
+harvest s =
+    let
+        tags = parseTags s
+        paragraphs = map clean $ partitions (~== TagOpen "p" [])
+            $ takeWhile (~/= TagOpen "div" [("id","back")])
+            $ dropWhile (~/= TagOpen "div" [("id","body")]) tags
+    in
+        unlines paragraphs where
+            clean :: [Tag String] -> String
+            clean = unwords
+                . words
+                . filter isAscii
+                . innerText
+                . filter isTagText
+-}
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.none
 
 -- VIEW
 
@@ -48,7 +90,6 @@ view : Model -> Html Msg
 view model =
     div []
         [ h2 [] [text model.topic]
-        , img [src model.gifUrl] []
         , button [ onClick Suck ] [ text "Harvest" ]
         ]
 
