@@ -49,7 +49,7 @@ view model =
     div []
         [ h2 [] [text model.topic]
         , img [src model.gifUrl] []
-        , button [ onClick MorePlease ] [ text "Harvest" ]
+        , button [ onClick Suck ] [ text "Harvest" ]
         ]
 
 
