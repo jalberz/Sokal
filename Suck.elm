@@ -55,7 +55,7 @@ harvest text =
         requests = map Http.getString urls
     in
         map Http.send requests
-
+--TODO: mapping an http request across many requests
 
 
 {-
