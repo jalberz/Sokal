@@ -27,7 +27,7 @@ update msg model =
   case msg of
     Click -> (model, getURLs)
 
-    Suck (Ok text) -> (model, harvest text)
+    Suck (Ok text) -> ( { model | urls -> (lines text) }, harvest text)
 
     Suck (Err _) -> Debug.crash "Error: HTTP get request" 
     Spew -> (model, msg)
@@ -36,7 +36,7 @@ getURLs : Cmd Msg
 getURLs =
   let
     src =
-      "http://cmsc-22311.cs.uchicago.edu/2015/Labs/Lab-01/urls.txt"
+      "http://cmsc-22311.cs.uchicago.edu/2015/Labs/Lab-01/urls.txt" --TODO, change urls and post on personal blog
 
     text =
       Http.getString src
@@ -48,11 +48,10 @@ decodeUrl : Decode.Decoder String
 decodeUrl =
   Decode.at ["data", "url"] Decode.string
 
-harvest : String -> String
-harvest text =
+harvest : List Cmd Msg
+harvest =
     let
-        urls = lines text
-        requests = map Http.getString urls
+        requests = map Http.getString model.urls
     in
         map Http.send requests
 --TODO: mapping an http request across many requests
